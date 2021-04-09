@@ -144,7 +144,6 @@ async def send_status(message: types.Message):
     """
     st = await status(message.chat.id)
     html = '<pre>\n| ' + ' | '.join(['Status','Name','Url','Template','LatestError']) + ' |\n'
-    html += '|:----------:|:----------:|:----------:|:--------:|:-------:|\n'
     for row in st:
         html += '| ' + ' | '.join([str(i) for i in row]) + ' |\n'
     html += '</pre>'
