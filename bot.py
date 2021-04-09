@@ -96,14 +96,14 @@ async def on_startup(x):
                     id INTEGER PRIMARY KEY,
                     chat_id INTEGER,
                     ts INTEGER,
-                    amount INTEGER,
+                    amount INTEGER
                     )''')
     asyncio.create_task(updater())
 
 
 async def get_payment_ts(chat_id):
     async with aiosqlite.connect(DB_NAME) as db:
-        cur = await db.execute('''SELECT ts FROM PA WHERE chat_id=?''', [chat_id, ])
+        cur = await db.execute('''SELECT ts FROM PAYMENTS WHERE chat_id=?''', [chat_id, ])
         users = await cur.fetchall()
     if not users:
         return 0
@@ -183,8 +183,8 @@ async def send_status(message: types.Message):
 
 @dp.message_handler(commands=['add'])
 async def add_alert(message: types.Message):
-    n_in_use = len(status(message.chat_id))
-    last_pay = await get_payment_ts(message.chat_id)
+    n_in_use = len(await status(message.chat.id))
+    last_pay = await get_payment_ts(message.chat.id)
     if int(time.time()) - last_pay >= 30 * 24 * 60 * 60 and n_in_use >= 2:
         await message.reply("Нельзя создать больше алертов на бесплатной версии.\nПерейдите на платную версию всего за 100р и создавайте неограниченное количество мониторингов: /buy")
         return
