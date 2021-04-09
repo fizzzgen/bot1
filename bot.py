@@ -90,7 +90,7 @@ async def on_startup(x):
                     chat_id INTEGER,
                     name TEXT,
                     address TEXT,
-                    template INTEGER,
+                    template TEXT,
                     status TEXT,
                     latest_error TEXT
                     )''')
