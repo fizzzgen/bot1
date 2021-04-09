@@ -143,7 +143,8 @@ async def send_status(message: types.Message):
     This handler will be called when user sends `/start` or `/help` command
     """
     st = await status(message.chat.id)
-    html = '<pre>\n| ' + ' | '.join(['Status','Name','Url','Template','LatestError']) + ' |\n'
+    html = 'Bot is working! Latest check period: {}\n\nYOUR ALERTS:\n\n'.format(update_time + 5)
+    html += '<pre>\n| ' + ' | '.join(['Status','Name','Url','Template','LatestError']) + ' |\n'
     for row in st:
         html += '| ' + ' | '.join([str(i) for i in row]) + ' |\n'
     html += '</pre>'
