@@ -145,7 +145,7 @@ async def send_status(message: types.Message):
     st = await status(message.chat.id)
     status_text = 'Current update period: {}s\n\nHere are your acive alerts:\n\n|Status|Name|Url|Template|LatestError|\n'.format(update_time+2)
     for line in st:
-        status_text += '| '+' | '.join(line)+' |\n'
+        status_text += '| '+' | '.join([str(i) for i in line])+' |\n'
     await message.reply(status_text)
 
 
