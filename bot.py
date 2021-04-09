@@ -32,7 +32,7 @@ async def update_status(alert, status, chat_id, error=None):
         await db.commit()
     if error:
         await bot.send_message(chat_id, str(error))
-    if alert[5] != status and 'HTTP_ERROR' not in status and HTTP_ERROR not in alert[5]:
+    if alert[5] != status and 'HTTP_ERROR' not in status and 'HTTP_ERROR' not in alert[5]:
         await bot.send_message(chat_id, '‼️‼️‼️ Alert {} changed status to {}'.format(alert[2], status))
 
 
