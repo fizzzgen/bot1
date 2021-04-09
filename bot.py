@@ -92,7 +92,29 @@ async def on_startup(x):
                     status TEXT,
                     latest_error TEXT
                     )''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS PAYMENTS(
+                    id INTEGER PRIMARY KEY,
+                    chat_id INTEGER,
+                    ts INTEGER,
+                    amount INTEGER,
+                    )''')
     asyncio.create_task(updater())
+
+
+async def get_payment_ts(chat_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        cur = await db.execute('''SELECT ts FROM PA WHERE chat_id=?''', [chat_id, ])
+        users = await cur.fetchall()
+    if not users:
+        return 0
+    return max([users[i][0] for i in range(len(users))])
+
+
+async def add_payment(chat_id, amount=100):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute('''INSERT INTO PAYMENTS(chat_id, ts, amount) VALUES(?,?,?)''',
+                         [chat_id, int(time.time()), amount])
+        await db.commit()
 
 
 async def add(chat_id, name, address, template):
@@ -161,6 +183,11 @@ async def send_status(message: types.Message):
 
 @dp.message_handler(commands=['add'])
 async def add_alert(message: types.Message):
+    n_in_use = len(status(message.chat_id))
+    last_pay = await get_payment_ts(message.chat_id)
+    if int(time.time()) - last_pay >= 30 * 24 * 60 * 60 and n_in_use >= 2:
+        await message.reply("Нельзя создать больше алертов на бесплатной версии.\nПерейдите на платную версию всего за 100р и создавайте неограниченное количество мониторингов: /buy")
+        return
     """
     This handler will be called when user sends `/start` or `/help` command
     """
@@ -201,7 +228,7 @@ async def delete_alert(message: types.Message):
 @dp.message_handler(commands=['buy'])
 async def cmd_buy(message: types.Message):
     await bot.send_invoice(message.chat.id, title='Продление подписки на месяц',
-                           description='Купите подписку и получите возможность создавать до 100 активных мониторингов',
+                           description='Купите подписку и получите возможность создавать неограниченное количество мониторингов',
                            provider_token=PAYMENTS_PROVIDER_TOKEN,
                            currency='rub',
                            is_flexible=False,  # True If you need to set up Shipping Fee
@@ -220,6 +247,7 @@ async def checkout(pre_checkout_query: types.PreCheckoutQuery):
 
 @dp.message_handler(content_types=ContentTypes.SUCCESSFUL_PAYMENT)
 async def got_payment(message: types.Message):
+    await add_payment(message.chat.id)
     await bot.send_message(message.chat.id,
                            'Платеж прошел успешно! Теперь вы можете создавать до сотни мониторингов.',
                            parse_mode='Markdown')
