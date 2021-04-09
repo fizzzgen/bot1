@@ -10,12 +10,15 @@ import sqlite3
 import httpx
 import pprint
 import time
+import os
 
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types.message import ContentTypes
 
-API_TOKEN = '1701420953:AAGkMe0awY4cbqtox4bBkIUO2TH53im-5wQ'
-PAYMENTS_PROVIDER_TOKEN = '381764678:TEST:23987'
+API_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
+PAYMENTS_PROVIDER_TOKEN = os.environ['PAYMENTS_PROVIDER_TOKEN']
+DATABASE_URL = os.environ['DATABASE_URL']
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
