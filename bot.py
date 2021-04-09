@@ -41,7 +41,7 @@ async def update_status(alert, status, chat_id, error=None):
                              [str(error).replace('\n', ' '), alert[0], ])
         await db.commit()
     if alert[5] != status and 'HTTP_ERROR' not in status and 'HTTP_ERROR' not in alert[5]:
-        await bot.send_message(chat_id, '‼️‼️‼️ Alert {} changed status to {}'.format(alert[2], status))
+        await bot.send_message(chat_id, '‼️‼️‼️ Мониторинг {} сменил статус на {}'.format(alert[2], status))
 
 
 async def update_alerts():
@@ -129,19 +129,20 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
-    await message.reply('''‼️‼️ Make some alerts! ‼️‼️\n
-Hi! I'm making alerts every 5 seconds to spectate your sites.
-You just need to find a template for the http response text match:
-For example, your template might be "Buy" for your favourite shop's web page.
-Alerts has some statuses: TEMPLATE_FOUND, TEMPLATE_NOT_FOUND, HTTP_ERROR.
-If the status is changing, you will be notified fast. Be aware, you will not be notificated about HTTP_ERROR status - it might be flapping over time
-        Command examples:
-        /add AlertName https://www.alert-example-shop.ru/ http_template
-        /delete AlertName
-        /status
-        /help
+    await message.reply('''‼️‼️ Привет! ‼️‼️\n
+Я мониторю указанные тобой веб страницы на наличие/отсутствие указанных тобой кусков HTML.
+Например, шаблоном может быть специфический серый цвет кнопки "Купить" на твоем любимом сайте, для продукта, которого в текущий момент нет в наличии.
+(Если ты не знаком с HTML - просто тыкни правой кнопкой мыши по объекту в браузере, который хочешь отслеживать и нажми Inspect element source code, там будут какие-либо специфичные характеристики объекта)
+У созданных мониторингов есть несколько статусов: ✅TEMPLATE_FOUND✅, 🚫TEMPLATE_NOT_FOUND🚫, 🛠HTTP_ERROR🛠.
+Ты будешь тут же уведомлен (макс. 5 секунд задержки) о смене статуса во всех случаях, кроме переходов в HTTP_ERROR (Любой сайт иногда не отвечает на долю запросов) - подробную информацию об ошибках ты можешь посмотреть командой /status.
 
-Try it out!''')
+Примеры:
+ Добавление мониторинга:   /add AlertName https://www.alert-example-shop.ru/ http_template
+ Удаление   мониторинга:   /delete AlertName
+ Текущий статус системы:   /status
+ Помощь                :   /help
+
+Надеюсь бот будет тебе полезен!''')
 
 
 @dp.message_handler(commands=['status'])
@@ -150,8 +151,8 @@ async def send_status(message: types.Message):
     This handler will be called when user sends `/start` or `/help` command
     """
     st = await status(message.chat.id)
-    html = 'Bot is working! Latest check period: {}\n\nYOUR ALERTS:\n\n'.format(update_time + 5)
-    html += '<pre>\n| ' + ' | '.join(['Status','Name','Url','Template','LatestError']) + ' |\n'
+    html = 'Работаем💪💪 Текущая максимальная задержка: {} секунд\n\nТвои мониторинги:\n\n'.format(update_time + 5)
+    html += '<pre>\n| ' + ' | '.join(['Статус','Название','Адрес','Шаблон','Последняя ошибка']) + ' |\n'
     for row in st:
         html += '| ' + ' | '.join([str(i) for i in row]) + ' |\n'
     html += '</pre>'
@@ -172,12 +173,12 @@ async def add_alert(message: types.Message):
         assert len(args[2]) < 200
         assert args[1].startswith('http')
     except:
-        await message.reply("Cant parse args.\nYour command must be in format:\n\n/add alert_name http_address http_template")
+        await message.reply("Неопознанные звери в аргументах.\nВаша команда должна иметь формат:\n\n/add alert_name http_address http_template")
         return
 
     await add(message.chat.id, *args)
 
-    await message.reply("Success.")
+    await message.reply("Успех.")
 
 
 @dp.message_handler(commands=['delete'])
@@ -190,30 +191,17 @@ async def delete_alert(message: types.Message):
         assert len(args) == 1
         assert len(args[0]) < 200
     except:
-        await message.reply("Cant parse args.\nYour command must be in format:\n\n/delete alert_name")
+        await message.reply("Неопознанные звери в аргументах.\nВаша команда должна иметь формат:\n\n/delete alert_name")
         return
 
     await delete(message.chat.id, *args)
-    await message.reply("Success.")
-
-
-@dp.message_handler(commands=['terms'])
-async def cmd_terms(message: types.Message):
-    await bot.send_message(message.chat.id,
-                           'Thank you for shopping with our demo bot. We hope you like your new time machine!\n'
-                           '1. If your time machine was not delivered on time, please rethink your concept of time'
-                           ' and try again.\n'
-                           '2. If you find that your time machine is not working, kindly contact our future service'
-                           ' workshops on Trappist-1e. They will be accessible anywhere between'
-                           ' May 2075 and November 4000 C.E.\n'
-                           '3. If you would like a refund, kindly apply for one yesterday and we will have sent it'
-                           ' to you immediately.')
+    await message.reply("Успех.")
 
 
 @dp.message_handler(commands=['buy'])
 async def cmd_buy(message: types.Message):
     await bot.send_invoice(message.chat.id, title='Продление подписки на месяц',
-                           description='Купите подписку и получите возможность создавать до 100 активных алертов',
+                           description='Купите подписку и получите возможность создавать до 100 активных мониторингов',
                            provider_token=PAYMENTS_PROVIDER_TOKEN,
                            currency='rub',
                            is_flexible=False,  # True If you need to set up Shipping Fee
@@ -233,10 +221,7 @@ async def checkout(pre_checkout_query: types.PreCheckoutQuery):
 @dp.message_handler(content_types=ContentTypes.SUCCESSFUL_PAYMENT)
 async def got_payment(message: types.Message):
     await bot.send_message(message.chat.id,
-                           'Hoooooray! Thanks for payment! We will proceed your order for `{} {}`'
-                           ' as fast as possible! Stay in touch.'
-                           '\n\nUse /buy again to get  Time Machine for your friend!'.format(
-                               message.successful_payment.total_amount / 100, message.successful_payment.currency),
+                           'Платеж прошел успешно! Теперь вы можете создавать до сотни мониторингов.',
                            parse_mode='Markdown')
 
 
