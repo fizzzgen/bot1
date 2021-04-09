@@ -129,8 +129,8 @@ For example, your template might be "Buy" for your favourite shop's web page.
 Alerts has some statuses: TEMPLATE_FOUND, TEMPLATE_NOT_FOUND, HTTP_ERROR.
 If the status is changing, you will be notified fast. Be aware, you will not be notificated about HTTP_ERROR status - it might be flapping over time
         Command examples:
-        /add DnsAlert https://www.alert-example-shop.ru/ Buy
-        /delete DnsAlert
+        /add AlertName https://www.alert-example-shop.ru/ http_template
+        /delete AlertName
         /status
         /help
 
