@@ -40,6 +40,7 @@ async def update_status(alert, status, chat_id, error=None):
     if error:
         await db.execute('''UPDATE ALERTS SET latest_error=? WHERE id=?''', [str(error).replace('\n', ' '), alert[0], ])
     await db.commit()
+    await db.close()
     if alert[5] != status and 'HTTP_ERROR' not in status and 'HTTP_ERROR' not in alert[5]:
         await bot.send_message(chat_id, '‼️‼️‼️ Мониторинг {} сменил статус на {}'.format(alert[2], status))
 
@@ -49,8 +50,8 @@ async def update_alerts():
     t1 = time.time()
     client = httpx.AsyncClient()
     db = await asyncpg.connect(DATABASE_URL)
-    cur = await db.execute('''SELECT id, chat_id, name, address, template, status FROM ALERTS''')
-    alerts = await cur.fetchall()
+    alerts = await db.fetch('''SELECT id, chat_id, name, address, template, status FROM ALERTS''')
+    await db.close()
     req_coros = []
     for alert in alerts:
         req_coros.append(client.get(alert[3], timeout=5))
@@ -81,9 +82,8 @@ async def updater():
 
 async def on_startup(x):
     db = await asyncpg.connect(DATABASE_URL)
-    cur = db.cursor()
 
-    cur.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
+    db.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
                     id INTEGER PRIMARY KEY,
                     chat_id INTEGER,
                     name TEXT,
@@ -92,12 +92,13 @@ async def on_startup(x):
                     status TEXT,
                     latest_error TEXT
                     )''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS PAYMENTS(
+    db.execute('''CREATE TABLE IF NOT EXISTS PAYMENTS(
                     id INTEGER PRIMARY KEY,
                     chat_id INTEGER,
                     ts INTEGER,
                     amount INTEGER
                     )''')
+    await db.close()
     asyncio.create_task(updater())
 
 
