@@ -17,7 +17,7 @@ from aiogram.types.message import ContentTypes
 API_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 PAYMENTS_PROVIDER_TOKEN = os.environ['PAYMENTS_PROVIDER_TOKEN']
 DATABASE_URL = os.environ['DATABASE_URL']
-
+pool = None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,9 +36,9 @@ prices = [
 
 async def update_status(alert, status, chat_id, error=None):
     db = await asyncpg.connect(DATABASE_URL)
-    await db.execute('''UPDATE ALERTS SET status=? WHERE id=?''', [status, alert[0], ])
+    await db.execute('''UPDATE ALERTS SET status=$1 WHERE id=$2''', *[status, alert[0], ])
     if error:
-        await db.execute('''UPDATE ALERTS SET latest_error=? WHERE id=?''', [str(error).replace('\n', ' '), alert[0], ])
+        await db.execute('''UPDATE ALERTS SET latest_error=$1 WHERE id=$2''', *[str(error).replace('\n', ' '), alert[0], ])
     await db.commit()
     await db.close()
     if alert[5] != status and 'HTTP_ERROR' not in status and 'HTTP_ERROR' not in alert[5]:
@@ -81,6 +81,8 @@ async def updater():
         await asyncio.sleep(5)
 
 async def on_startup(x):
+    global pool
+    pool = await asyncpg.create_pool(DATABASE_URL)
     db = await asyncpg.connect(DATABASE_URL)
 
     await db.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
@@ -104,7 +106,7 @@ async def on_startup(x):
 
 async def get_payment_ts(chat_id):
     db = await asyncpg.connect(DATABASE_URL)
-    users = await db.fetch('''SELECT ts FROM PAYMENTS WHERE chat_id=?''', [chat_id, ])
+    users = await db.fetch('''SELECT ts FROM PAYMENTS WHERE chat_id=$1''', *[chat_id, ])
     await db.close()
     if not users:
         return 0
@@ -113,25 +115,25 @@ async def get_payment_ts(chat_id):
 
 async def add_payment(chat_id, amount=100):
     db = await asyncpg.connect(DATABASE_URL)
-    await db.execute('''INSERT INTO PAYMENTS(chat_id, ts, amount) VALUES(?,?,?)''', [chat_id, int(time.time()), amount])
+    await db.execute('''INSERT INTO PAYMENTS(chat_id, ts, amount) VALUES($1,$2,$3)''', *[chat_id, int(time.time()), amount])
     await db.close()
 
 
 async def add(chat_id, name, address, template):
     db = await asyncpg.connect(DATABASE_URL)
-    await db.execute('''INSERT INTO ALERTS(chat_id, name, address, template, status) VALUES(?,?,?,?,?)''', [chat_id, name, address, template, '⏳NS⏳'])
+    await db.execute('''INSERT INTO ALERTS(chat_id, name, address, template, status) VALUES($1,$2,$3,$4,$5)''', *[chat_id, name, address, template, '⏳NS⏳'])
     await db.close()
 
 
 async def delete(chat_id, name):
     db = await asyncpg.connect(DATABASE_URL)
-    await db.execute('''DELETE FROM ALERTS WHERE chat_id=? AND name=?''', [chat_id, name])
+    await db.execute('''DELETE FROM ALERTS WHERE chat_id=$1 AND name=$2''', *[chat_id, name])
     await db.close()
 
 
 async def status(chat_id):
     db = await asyncpg.connect(DATABASE_URL)
-    await db.execute('''SELECT status, name, address, template, latest_error FROM ALERTS WHERE chat_id=?''', [chat_id, ])
+    await db.execute('''SELECT status, name, address, template, latest_error FROM ALERTS WHERE chat_id=$1''', *[chat_id, ])
     await db.close()
     return alerts
 
