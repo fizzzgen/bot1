@@ -25,11 +25,13 @@ DB_NAME = 'db.sqlite'
 
 update_time = 0
 
-async def update_status(alert, status, chat_id):
+async def update_status(alert, status, chat_id, error=None):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute('''UPDATE ALERTS SET status=? WHERE id=?''',
                          [status, alert[0], ])
         await db.commit()
+    if error:
+        await bot.send_message(chat_id, str(error))
     if alert[5] != status and 'HTTP_ERROR' not in status and HTTP_ERROR not in alert[5]:
         await bot.send_message(chat_id, '‼️‼️‼️ Alert {} changed status to {}'.format(alert[2], status))
 
@@ -51,13 +53,13 @@ async def update_alerts():
         try:
             resp = coro
             if resp.status_code != 200:
-                await update_status(alerts[alert_id], '🛠HTTP_ERROR:{}🛠'.format(resp.status_code), alerts[alert_id][1])
+                await update_status(alerts[alert_id], '🛠HTTP_ERROR:{}🛠'.format(resp.status_code), alerts[alert_id][1], error=resp.text)
             if alerts[alert_id][4] in resp.text:
                 await update_status(alerts[alert_id], '✅TEMPLATE_FOUND✅', alerts[alert_id][1])
             else:
                 await update_status(alerts[alert_id], '🚫TEMPLATE_NOT_FOUND🚫', alerts[alert_id][1])
         except Exception as ex:
-            await update_status(alerts[alert_id], '🛠HTTP_ERROR🛠', alerts[alert_id][1])
+            await update_status(alerts[alert_id], '🛠HTTP_ERROR🛠', alerts[alert_id][1], error=ex)
         alert_id += 1
     t2 = time.time()
     update_time = t2 - t1
