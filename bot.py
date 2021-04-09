@@ -83,7 +83,7 @@ async def updater():
 async def on_startup(x):
     db = await asyncpg.connect(DATABASE_URL)
 
-    db.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
+    await db.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
                     id INTEGER PRIMARY KEY,
                     chat_id INTEGER,
                     name TEXT,
@@ -92,7 +92,7 @@ async def on_startup(x):
                     status TEXT,
                     latest_error TEXT
                     )''')
-    db.execute('''CREATE TABLE IF NOT EXISTS PAYMENTS(
+    await db.execute('''CREATE TABLE IF NOT EXISTS PAYMENTS(
                     id INTEGER PRIMARY KEY,
                     chat_id INTEGER,
                     ts INTEGER,
@@ -104,8 +104,8 @@ async def on_startup(x):
 
 async def get_payment_ts(chat_id):
     db = await asyncpg.connect(DATABASE_URL)
-    users = db.fetch('''SELECT ts FROM PAYMENTS WHERE chat_id=?''', [chat_id, ])
-    db.close()
+    users = await db.fetch('''SELECT ts FROM PAYMENTS WHERE chat_id=?''', [chat_id, ])
+    await db.close()
     if not users:
         return 0
     return max([users[i][0] for i in range(len(users))])
