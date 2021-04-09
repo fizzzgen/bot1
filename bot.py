@@ -103,42 +103,36 @@ async def on_startup(x):
 
 
 async def get_payment_ts(chat_id):
-    async with asyncpg.connect(DATABASE_URL) as db:
-        cur = await db.execute('''SELECT ts FROM PAYMENTS WHERE chat_id=?''', [chat_id, ])
-        users = await cur.fetchall()
+    db = await asyncpg.connect(DATABASE_URL)
+    users = db.fetch('''SELECT ts FROM PAYMENTS WHERE chat_id=?''', [chat_id, ])
+    db.close()
     if not users:
         return 0
     return max([users[i][0] for i in range(len(users))])
 
 
 async def add_payment(chat_id, amount=100):
-    async with asyncpg.connect(DATABASE_URL) as db:
-        await db.execute('''INSERT INTO PAYMENTS(chat_id, ts, amount) VALUES(?,?,?)''',
-                         [chat_id, int(time.time()), amount])
-        await db.commit()
+    db = await asyncpg.connect(DATABASE_URL)
+    await db.execute('''INSERT INTO PAYMENTS(chat_id, ts, amount) VALUES(?,?,?)''', [chat_id, int(time.time()), amount])
+    await db.close()
 
 
 async def add(chat_id, name, address, template):
-    async with asyncpg.connect(DATABASE_URL) as db:
-        await db.execute('''INSERT INTO ALERTS(chat_id, name, address, template, status)
-                         VALUES(?,?,?,?,?)''',
-                         [chat_id, name, address, template, '⏳NS⏳'])
-        await db.commit()
+    db = await asyncpg.connect(DATABASE_URL)
+    await db.execute('''INSERT INTO ALERTS(chat_id, name, address, template, status) VALUES(?,?,?,?,?)''', [chat_id, name, address, template, '⏳NS⏳'])
+    await db.close()
 
 
 async def delete(chat_id, name):
-    async with asyncpg.connect(DATABASE_URL) as db:
-        comm = await db.execute('''DELETE FROM ALERTS WHERE chat_id=? AND name=?''',
-                         [chat_id, name])
-        await db.commit()
+    db = await asyncpg.connect(DATABASE_URL)
+    await db.execute('''DELETE FROM ALERTS WHERE chat_id=? AND name=?''', [chat_id, name])
+    await db.close()
 
 
 async def status(chat_id):
-    async with asyncpg.connect(DATABASE_URL) as db:
-        cur = await db.execute('''SELECT status, name, address, template, latest_error FROM ALERTS WHERE chat_id=?''',
-                         [chat_id, ])
-        alerts = await cur.fetchall()
-
+    db = await asyncpg.connect(DATABASE_URL)
+    await db.execute('''SELECT status, name, address, template, latest_error FROM ALERTS WHERE chat_id=?''', [chat_id, ])
+    await db.close()
     return alerts
 
 
