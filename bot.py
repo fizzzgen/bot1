@@ -105,7 +105,7 @@ async def delete(chat_id, name):
 
 async def status(chat_id):
     async with aiosqlite.connect(DB_NAME) as db:
-        cur = await db.execute('''SELECT status, name, url, template, latest_error FROM ALERTS WHERE chat_id=?''',
+        cur = await db.execute('''SELECT status, name, address, template, latest_error FROM ALERTS WHERE chat_id=?''',
                          [chat_id, ])
         alerts = await cur.fetchall()
 
