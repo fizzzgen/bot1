@@ -83,7 +83,7 @@ async def on_startup(x):
                     address TEXT,
                     template INTEGER,
                     status TEXT,
-                    latest_error TEXT,
+                    latest_error TEXT
                     )''')
     asyncio.create_task(updater())
 
