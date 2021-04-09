@@ -4,9 +4,8 @@ It echoes any incoming text messages.
 """
 
 import asyncio
+import asyncpg
 import logging
-import aiosqlite
-import sqlite3
 import httpx
 import pprint
 import time
@@ -26,7 +25,6 @@ logging.basicConfig(level=logging.INFO)
 # Initialize bot and dispatcher
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
-DB_NAME = 'db.sqlite'
 
 update_time = 0
 
@@ -35,8 +33,9 @@ prices = [
     types.LabeledPrice(label='Продление подписки на месяц', amount=10000),
 ]
 
+
 async def update_status(alert, status, chat_id, error=None):
-    async with aiosqlite.connect(DB_NAME) as db:
+    async with asyncpg.connect(DATABASE_URL) as db:
         await db.execute('''UPDATE ALERTS SET status=? WHERE id=?''',
                          [status, alert[0], ])
         if error:
@@ -51,7 +50,7 @@ async def update_alerts():
     global update_time
     t1 = time.time()
     client = httpx.AsyncClient()
-    async with aiosqlite.connect(DB_NAME) as db:
+    async with asyncpg.connect(DATABASE_URL) as db:
         cur = await db.execute('''SELECT id, chat_id, name, address, template, status FROM ALERTS''')
         alerts = await cur.fetchall()
     req_coros = []
@@ -83,7 +82,7 @@ async def updater():
         await asyncio.sleep(5)
 
 async def on_startup(x):
-    with sqlite3.connect(DB_NAME) as db:
+    with asyncpg.connect(DATABASE_URL) as db:
         cur = db.cursor()
 
         cur.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
@@ -105,7 +104,7 @@ async def on_startup(x):
 
 
 async def get_payment_ts(chat_id):
-    async with aiosqlite.connect(DB_NAME) as db:
+    async with asyncpg.connect(DATABASE_URL) as db:
         cur = await db.execute('''SELECT ts FROM PAYMENTS WHERE chat_id=?''', [chat_id, ])
         users = await cur.fetchall()
     if not users:
@@ -114,14 +113,14 @@ async def get_payment_ts(chat_id):
 
 
 async def add_payment(chat_id, amount=100):
-    async with aiosqlite.connect(DB_NAME) as db:
+    async with asyncpg.connect(DATABASE_URL) as db:
         await db.execute('''INSERT INTO PAYMENTS(chat_id, ts, amount) VALUES(?,?,?)''',
                          [chat_id, int(time.time()), amount])
         await db.commit()
 
 
 async def add(chat_id, name, address, template):
-    async with aiosqlite.connect(DB_NAME) as db:
+    async with asyncpg.connect(DATABASE_URL) as db:
         await db.execute('''INSERT INTO ALERTS(chat_id, name, address, template, status)
                          VALUES(?,?,?,?,?)''',
                          [chat_id, name, address, template, '⏳NS⏳'])
@@ -129,14 +128,14 @@ async def add(chat_id, name, address, template):
 
 
 async def delete(chat_id, name):
-    async with aiosqlite.connect(DB_NAME) as db:
+    async with asyncpg.connect(DATABASE_URL) as db:
         comm = await db.execute('''DELETE FROM ALERTS WHERE chat_id=? AND name=?''',
                          [chat_id, name])
         await db.commit()
 
 
 async def status(chat_id):
-    async with aiosqlite.connect(DB_NAME) as db:
+    async with asyncpg.connect(DATABASE_URL) as db:
         cur = await db.execute('''SELECT status, name, address, template, latest_error FROM ALERTS WHERE chat_id=?''',
                          [chat_id, ])
         alerts = await cur.fetchall()
