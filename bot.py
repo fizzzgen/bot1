@@ -143,10 +143,12 @@ async def send_status(message: types.Message):
     This handler will be called when user sends `/start` or `/help` command
     """
     st = await status(message.chat.id)
-    status_text = 'Current update period: {}s\n\nHere are your acive alerts:\n\n|Status|Name|Url|Template|LatestError|\n'.format(update_time+2)
-    for line in st:
-        status_text += '| '+' | '.join([str(i) for i in line])+' |\n'
-    await message.reply(status_text)
+    html = '<pre>\n| ' + ' | '.join(['Status','Name','Url','Template','LatestError']) + ' |\n'
+    html += '|:----------:|:----------:|:----------:|:--------:|:-------:|\n'
+    for row in st:
+        html += '| ' + ' | '.join([str(i) for i in row]) + ' |\n'
+    html += '</pre>'
+    await message.reply(html, parse_mode='HTML')
 
 
 @dp.message_handler(commands=['add'])
