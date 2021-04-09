@@ -35,13 +35,11 @@ prices = [
 
 
 async def update_status(alert, status, chat_id, error=None):
-    async with asyncpg.connect(DATABASE_URL) as db:
-        await db.execute('''UPDATE ALERTS SET status=? WHERE id=?''',
-                         [status, alert[0], ])
-        if error:
-            await db.execute('''UPDATE ALERTS SET latest_error=? WHERE id=?''',
-                             [str(error).replace('\n', ' '), alert[0], ])
-        await db.commit()
+    db = await asyncpg.connect(DATABASE_URL)
+    await db.execute('''UPDATE ALERTS SET status=? WHERE id=?''', [status, alert[0], ])
+    if error:
+        await db.execute('''UPDATE ALERTS SET latest_error=? WHERE id=?''', [str(error).replace('\n', ' '), alert[0], ])
+    await db.commit()
     if alert[5] != status and 'HTTP_ERROR' not in status and 'HTTP_ERROR' not in alert[5]:
         await bot.send_message(chat_id, '‼️‼️‼️ Мониторинг {} сменил статус на {}'.format(alert[2], status))
 
@@ -50,9 +48,9 @@ async def update_alerts():
     global update_time
     t1 = time.time()
     client = httpx.AsyncClient()
-    async with asyncpg.connect(DATABASE_URL) as db:
-        cur = await db.execute('''SELECT id, chat_id, name, address, template, status FROM ALERTS''')
-        alerts = await cur.fetchall()
+    db = await asyncpg.connect(DATABASE_URL)
+    cur = await db.execute('''SELECT id, chat_id, name, address, template, status FROM ALERTS''')
+    alerts = await cur.fetchall()
     req_coros = []
     for alert in alerts:
         req_coros.append(client.get(alert[3], timeout=5))
