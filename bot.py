@@ -143,9 +143,9 @@ async def send_status(message: types.Message):
     This handler will be called when user sends `/start` or `/help` command
     """
     st = await status(message.chat.id)
-    status_text = 'Current update period: {}s\n\nHere are your acive alerts:\n\nStatus\tName\tUrl\tTemplate\tLatestError\n\n'.format(update_time+2)
+    status_text = 'Current update period: {}s\n\nHere are your acive alerts:\n\n|Status|Name|Url|Template|LatestError|\n'.format(update_time+2)
     for line in st:
-        status_text += str(line)
+        status_text += '| '+' | '.join(line)+' |\n'
     await message.reply(status_text)
 
 
