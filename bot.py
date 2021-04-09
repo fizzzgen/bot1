@@ -86,7 +86,7 @@ async def on_startup(x):
     db = await asyncpg.connect(DATABASE_URL)
 
     await db.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
-                    id INTEGER PRIMARY KEY,
+                    id serial PRIMARY KEY,
                     chat_id INTEGER,
                     name TEXT,
                     address TEXT,
@@ -95,8 +95,7 @@ async def on_startup(x):
                     latest_error TEXT
                     )''')
     await db.execute('''CREATE TABLE IF NOT EXISTS PAYMENTS(
-                    id INTEGER PRIMARY KEY,
-                    chat_id INTEGER,
+                    chat_id serial PRIMARY KEY,
                     ts INTEGER,
                     amount INTEGER
                     )''')
