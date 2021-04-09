@@ -80,10 +80,10 @@ async def updater():
         await asyncio.sleep(5)
 
 async def on_startup(x):
-    with asyncpg.connect(DATABASE_URL) as db:
-        cur = db.cursor()
+    db = await asyncpg.connect(DATABASE_URL)
+    cur = db.cursor()
 
-        cur.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
+    cur.execute('''CREATE TABLE IF NOT EXISTS ALERTS(
                     id INTEGER PRIMARY KEY,
                     chat_id INTEGER,
                     name TEXT,
@@ -92,7 +92,7 @@ async def on_startup(x):
                     status TEXT,
                     latest_error TEXT
                     )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS PAYMENTS(
+    cur.execute('''CREATE TABLE IF NOT EXISTS PAYMENTS(
                     id INTEGER PRIMARY KEY,
                     chat_id INTEGER,
                     ts INTEGER,
