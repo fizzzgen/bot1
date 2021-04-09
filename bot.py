@@ -12,8 +12,10 @@ import pprint
 import time
 
 from aiogram import Bot, Dispatcher, executor, types
+from aiogram.types.message import ContentTypes
 
 API_TOKEN = '1701420953:AAGkMe0awY4cbqtox4bBkIUO2TH53im-5wQ'
+PAYMENTS_PROVIDER_TOKEN = '381764678:TEST:23987'
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +26,11 @@ dp = Dispatcher(bot)
 DB_NAME = 'db.sqlite'
 
 update_time = 0
+
+# Setup prices
+prices = [
+    types.LabeledPrice(label='Продление подписки на месяц', amount=10000),
+]
 
 async def update_status(alert, status, chat_id, error=None):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -188,6 +195,49 @@ async def delete_alert(message: types.Message):
 
     await delete(message.chat.id, *args)
     await message.reply("Success.")
+
+
+@dp.message_handler(commands=['terms'])
+async def cmd_terms(message: types.Message):
+    await bot.send_message(message.chat.id,
+                           'Thank you for shopping with our demo bot. We hope you like your new time machine!\n'
+                           '1. If your time machine was not delivered on time, please rethink your concept of time'
+                           ' and try again.\n'
+                           '2. If you find that your time machine is not working, kindly contact our future service'
+                           ' workshops on Trappist-1e. They will be accessible anywhere between'
+                           ' May 2075 and November 4000 C.E.\n'
+                           '3. If you would like a refund, kindly apply for one yesterday and we will have sent it'
+                           ' to you immediately.')
+
+
+@dp.message_handler(commands=['buy'])
+async def cmd_buy(message: types.Message):
+    await bot.send_invoice(message.chat.id, title='Продление подписки на месяц',
+                           description='Купите подписку и получите возможность создавать до 100 активных алертов',
+                           provider_token=PAYMENTS_PROVIDER_TOKEN,
+                           currency='rub',
+                           is_flexible=False,  # True If you need to set up Shipping Fee
+                           prices=prices,
+                           start_parameter='time-machine-example',
+                           payload='{}'.format(message.chat.id))
+
+
+@dp.pre_checkout_query_handler(lambda query: True)
+async def checkout(pre_checkout_query: types.PreCheckoutQuery):
+    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,
+                                        error_message="Aliens tried to steal your card's CVV,"
+                                                      " but we successfully protected your credentials,"
+                                                      " try to pay again in a few minutes, we need a small rest.")
+
+
+@dp.message_handler(content_types=ContentTypes.SUCCESSFUL_PAYMENT)
+async def got_payment(message: types.Message):
+    await bot.send_message(message.chat.id,
+                           'Hoooooray! Thanks for payment! We will proceed your order for `{} {}`'
+                           ' as fast as possible! Stay in touch.'
+                           '\n\nUse /buy again to get  Time Machine for your friend!'.format(
+                               message.successful_payment.total_amount / 100, message.successful_payment.currency),
+                           parse_mode='Markdown')
 
 
 if __name__ == '__main__':
