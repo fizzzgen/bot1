@@ -133,7 +133,7 @@ async def delete(chat_id, name):
 
 async def status(chat_id):
     db = await asyncpg.connect(DATABASE_URL)
-    await db.execute('''SELECT status, name, address, template, latest_error FROM ALERTS WHERE chat_id=$1''', *[chat_id, ])
+    alerts = await db.fetch('''SELECT status, name, address, template, latest_error FROM ALERTS WHERE chat_id=$1''', *[chat_id, ])
     await db.close()
     return alerts
 
