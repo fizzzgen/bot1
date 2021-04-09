@@ -39,7 +39,6 @@ async def update_status(alert, status, chat_id, error=None):
     await db.execute('''UPDATE ALERTS SET status=$1 WHERE id=$2''', *[status, alert[0], ])
     if error:
         await db.execute('''UPDATE ALERTS SET latest_error=$1 WHERE id=$2''', *[str(error).replace('\n', ' '), alert[0], ])
-    await db.commit()
     await db.close()
     if alert[5] != status and 'HTTP_ERROR' not in status and 'HTTP_ERROR' not in alert[5]:
         await bot.send_message(chat_id, '‼️‼️‼️ Мониторинг {} сменил статус на {}'.format(alert[2], status))
@@ -245,7 +244,7 @@ async def checkout(pre_checkout_query: types.PreCheckoutQuery):
 async def got_payment(message: types.Message):
     await add_payment(message.chat.id)
     await bot.send_message(message.chat.id,
-                           'Платеж прошел успешно! Теперь вы можете создавать до сотни мониторингов.',
+                           'Платеж прошел успешно! Теперь вы можете создавать неограниченное количество мониторингов.',
                            parse_mode='Markdown')
 
 
