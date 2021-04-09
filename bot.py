@@ -29,9 +29,10 @@ async def update_status(alert, status, chat_id, error=None):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute('''UPDATE ALERTS SET status=? WHERE id=?''',
                          [status, alert[0], ])
+        if error:
+            await db.execute('''UPDATE ALERTS SET latest_error=? WHERE id=?''',
+                             [str(error).replace('\n', ' '), alert[0], ])
         await db.commit()
-    if error:
-        await bot.send_message(chat_id, str(error))
     if alert[5] != status and 'HTTP_ERROR' not in status and 'HTTP_ERROR' not in alert[5]:
         await bot.send_message(chat_id, '‼️‼️‼️ Alert {} changed status to {}'.format(alert[2], status))
 
@@ -81,7 +82,8 @@ async def on_startup(x):
                     name TEXT,
                     address TEXT,
                     template INTEGER,
-                    status TEXT
+                    status TEXT,
+                    latest_error TEXT,
                     )''')
     asyncio.create_task(updater())
 
@@ -103,7 +105,7 @@ async def delete(chat_id, name):
 
 async def status(chat_id):
     async with aiosqlite.connect(DB_NAME) as db:
-        cur = await db.execute('''SELECT name, status FROM ALERTS WHERE chat_id=?''',
+        cur = await db.execute('''SELECT status, name, url, template, latest_error FROM ALERTS WHERE chat_id=?''',
                          [chat_id, ])
         alerts = await cur.fetchall()
 
@@ -141,9 +143,9 @@ async def send_status(message: types.Message):
     This handler will be called when user sends `/start` or `/help` command
     """
     st = await status(message.chat.id)
-    status_text = 'Current update period: {}s\n\nHere are your acive alerts:\n\nName\tStatus\n\n'.format(update_time+2)
+    status_text = 'Current update period: {}s\n\nHere are your acive alerts:\n\nStatus\tName\tUrl\tTemplate\tLatestError\n\n'.format(update_time+2)
     for line in st:
-        status_text += "{}\t{}\n".format(*line)
+        status_text += str(line)
     await message.reply(status_text)
 
 
